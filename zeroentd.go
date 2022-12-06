@@ -9,6 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+type fluentIface interface {
+	Post(tag string, message interface{}) error
+	Close() error
+}
+
 func New(tag string, cfg ...fluent.Config) (*Writer, error) {
 	if len(cfg) == 0 {
 		client, err := fluent.New(fluent.Config{})
@@ -31,7 +36,7 @@ func New(tag string, cfg ...fluent.Config) (*Writer, error) {
 }
 
 type Writer struct {
-	client *fluent.Fluent
+	client fluentIface
 	tag    string
 }
 
@@ -47,7 +52,7 @@ func (w *Writer) Write(data []byte) (int, error) {
 	r := bytes.NewReader(data)
 	packet := map[string]any{}
 	if err := json.NewDecoder(r).Decode(&packet); err != nil {
-		return 0, errors.WithMessage(err, "failed to parse zerolog log string")
+		return 0, errors.WithMessage(NewErrJsonDecode(err), "failed to parse zerolog log string")
 	}
 	if err := w.client.Post(w.tag, packet); err != nil {
 		return 0, errors.WithMessagef(err, "failed to send log: %s", bytesToStrUnsafe(data))
