@@ -1,4 +1,5 @@
 # zeroentd
+io.Writer library that wraps fluentd
 
 ## example
 ```Go
